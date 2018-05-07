@@ -1,14 +1,27 @@
 package com.example.mis.sensor;
 
+import android.content.Context;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.TextView;
+import android.widget.Toast;
+
 import com.example.mis.sensor.FFT;
 
 import java.util.Random;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements SensorEventListener{
+
+    private SensorManager sensorManager;
+    Sensor accelerometer;
+
+    TextView xView, yView, zView, magnitudeView;
 
     //example variables
     private double[] rndAccExamplevalues;
@@ -19,12 +32,51 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        xView = (TextView) findViewById(R.id.first);
+        yView = (TextView) findViewById(R.id.second);
+        zView = (TextView) findViewById(R.id.third);
+        magnitudeView = (TextView) findViewById(R.id.fourth);
+
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        if (sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null) {
+            // accelerometer available
+            accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+            sensorManager.registerListener(MainActivity.this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+        } else {
+            // accelerometer not available
+            Toast.makeText(getApplicationContext(), "No Accelerometer", Toast.LENGTH_SHORT).show();
+        }
+
         //initiate and fill example array with random values
         rndAccExamplevalues = new double[64];
         randomFill(rndAccExamplevalues);
         new FFTAsynctask(64).execute(rndAccExamplevalues);
     }
 
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int i){
+
+    }
+    @Override
+    public void onSensorChanged(SensorEvent sensorEvent){
+
+        // vars
+        float magnitude = 0.0f;
+        float[] xyz = new float[3];
+        xyz[0] = sensorEvent.values[0];
+        xyz[1] = sensorEvent.values[1];
+        xyz[2] = sensorEvent.values[2];
+
+        // The Magnitude of a Vector V ; v2 = x2 + y2 + z2
+        // reference: http://members.tripod.com/~Paul_Kirby/vector/VLintro.html
+        magnitude = (float)Math.sqrt(xyz[0] * xyz[0] + xyz[1] * xyz[1] + xyz[2] * xyz[2]);
+        magnitude = Math.abs(magnitude);
+
+        xView.setText("x: " + xyz[0]);
+        yView.setText("y: " + xyz[1]);
+        zView.setText("z: " + xyz[2]);
+        magnitudeView.setText("magnitude: " + magnitude);
+    }
 
     /**
      * Implements the fft functionality as an async task
