@@ -15,9 +15,12 @@ import android.widget.Toast;
 
 import com.example.mis.sensor.FFT;
 import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,17 +60,42 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         //adding chart
         chart = (LineChart) findViewById(R.id.chart);
+        XAxis xAxis = chart.getXAxis();
+        xAxis.setDrawLabels(true);
+        xAxis.setDrawGridLines(true);
+        xAxis.setDrawAxisLine(false);
+        xAxis.setLabelCount(20, true);
+        xAxis.setGranularity(20.0f);
+        xAxis.setGranularityEnabled(true);
+        YAxis left = chart.getAxisLeft();
+        left.setDrawLabels(false);
+        left.setDrawAxisLine(false);
+        left.setDrawGridLines(false);
+        left.setDrawZeroLine(true);
+        YAxis right = chart.getAxisRight();
+        right.setEnabled(false);
+
 
         //add data (temporary)
-        List<Entry> entries = new ArrayList<Entry>();
-        entries.add(new Entry(0.0f, 5.0f));
-        entries.add(new Entry(1.0f, 3.0f));
-        entries.add(new Entry(2.0f, 7.0f));
-        entries.add(new Entry(3.0f, 2.0f));
-        LineDataSet dataSet = new LineDataSet(entries, "label");
-        dataSet.setColor(Color.RED);
-        dataSet.setValueTextColor(Color.BLUE);
-        LineData lineData = new LineData(dataSet);
+        List<Entry> x = new ArrayList<Entry>();
+        List<Entry> y = new ArrayList<Entry>();
+        x.add(new Entry(0.0f, 5.0f));
+        x.add(new Entry(1.0f, -3.0f));
+        y.add(new Entry(0.0f, 7.0f));
+        y.add(new Entry(1.0f, -2.0f));
+        LineDataSet xdata = new LineDataSet(x, "x");
+        xdata.setAxisDependency(YAxis.AxisDependency.LEFT);
+        LineDataSet ydata = new LineDataSet(y, "y");
+        ydata.setAxisDependency(YAxis.AxisDependency.LEFT);
+        xdata.setColor(Color.RED);
+        ydata.setColor(Color.GREEN);
+
+        //xdata.setValueTextColor(Color.BLUE);
+        //ydata.setValueTextColor(Color.BLUE);
+        List<ILineDataSet> dataSets = new ArrayList<ILineDataSet>();
+        dataSets.add(xdata);
+        dataSets.add(ydata);
+        LineData lineData = new LineData(dataSets);
         chart.setData(lineData);
         chart.invalidate();
 
