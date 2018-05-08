@@ -1,6 +1,7 @@
 package com.example.mis.sensor;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -13,7 +14,13 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.mis.sensor.FFT;
+import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener{
@@ -22,6 +29,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     Sensor accelerometer;
 
     TextView xView, yView, zView, magnitudeView;
+    LineChart chart;
 
     //example variables
     private double[] rndAccExamplevalues;
@@ -46,6 +54,23 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             // accelerometer not available
             Toast.makeText(getApplicationContext(), "No Accelerometer", Toast.LENGTH_SHORT).show();
         }
+
+        //adding chart
+        chart = (LineChart) findViewById(R.id.chart);
+
+        //add data (temporary)
+        List<Entry> entries = new ArrayList<Entry>();
+        entries.add(new Entry(0.0f, 5.0f));
+        entries.add(new Entry(1.0f, 3.0f));
+        entries.add(new Entry(2.0f, 7.0f));
+        entries.add(new Entry(3.0f, 2.0f));
+        LineDataSet dataSet = new LineDataSet(entries, "label");
+        dataSet.setColor(Color.RED);
+        dataSet.setValueTextColor(Color.BLUE);
+        LineData lineData = new LineData(dataSet);
+        chart.setData(lineData);
+        chart.invalidate();
+
 
         //initiate and fill example array with random values
         rndAccExamplevalues = new double[64];
