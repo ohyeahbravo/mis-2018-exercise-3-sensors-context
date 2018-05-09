@@ -31,7 +31,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private SensorManager sensorManager;
     Sensor accelerometer;
 
-    TextView xView, yView, zView, magnitudeView;
     LineChart chart;
     LineData lineData;
     LineDataSet xSet, ySet, zSet, mSet;
@@ -45,11 +44,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        xView = (TextView) findViewById(R.id.first);
-        yView = (TextView) findViewById(R.id.second);
-        zView = (TextView) findViewById(R.id.third);
-        magnitudeView = (TextView) findViewById(R.id.fourth);
 
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         if (sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION) != null) {
@@ -115,6 +109,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         dataSets.add(mSet);
 
         lineData = new LineData(dataSets);
+        lineData.setDrawValues(false);
         chart.setData(lineData);
     }
 
@@ -136,11 +131,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // reference: http://members.tripod.com/~Paul_Kirby/vector/VLintro.html
         magnitude = (float)Math.sqrt(xyz[0] * xyz[0] + xyz[1] * xyz[1] + xyz[2] * xyz[2]);
         magnitude = Math.abs(magnitude);
-
-        xView.setText("x: " + xyz[0]);
-        yView.setText("y: " + xyz[1]);
-        zView.setText("z: " + xyz[2]);
-        magnitudeView.setText("magnitude: " + magnitude);
 
         // add data to the chart
         if(labelCount == 15.0f) {
