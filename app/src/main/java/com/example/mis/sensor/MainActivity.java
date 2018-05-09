@@ -33,6 +33,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     TextView xView, yView, zView, magnitudeView;
     LineChart chart;
+    LineData lineData;
+    LineDataSet xSet, ySet, zSet, mSet;
+    float labelCount = -1.0f;    // refresh the graph after 15 datasets;
 
     //example variables
     private double[] rndAccExamplevalues;
@@ -49,24 +52,23 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         magnitudeView = (TextView) findViewById(R.id.fourth);
 
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        if (sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null) {
+        if (sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION) != null) {
             // accelerometer available
-            accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-            sensorManager.registerListener(MainActivity.this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+            accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
+            sensorManager.registerListener(MainActivity.this, accelerometer, 1000000);
         } else {
             // accelerometer not available
             Toast.makeText(getApplicationContext(), "No Accelerometer", Toast.LENGTH_SHORT).show();
         }
 
-        //adding chart
+        // adding chart
         chart = (LineChart) findViewById(R.id.chart);
+        chart.setBackgroundColor(Color.LTGRAY);
         XAxis xAxis = chart.getXAxis();
-        xAxis.setDrawLabels(true);
-        xAxis.setDrawGridLines(true);
+        xAxis.setAxisMaximum(15.0f);
+        xAxis.setDrawGridLines(false);
         xAxis.setDrawAxisLine(false);
-        xAxis.setLabelCount(20, true);
-        xAxis.setGranularity(20.0f);
-        xAxis.setGranularityEnabled(true);
+        xAxis.setDrawLabels(false);
         YAxis left = chart.getAxisLeft();
         left.setDrawLabels(false);
         left.setDrawAxisLine(false);
@@ -74,36 +76,46 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         left.setDrawZeroLine(true);
         YAxis right = chart.getAxisRight();
         right.setEnabled(false);
+        chart.getDescription().setText("");
 
-
-        //add data (temporary)
-        List<Entry> x = new ArrayList<Entry>();
-        List<Entry> y = new ArrayList<Entry>();
-        x.add(new Entry(0.0f, 5.0f));
-        x.add(new Entry(1.0f, -3.0f));
-        y.add(new Entry(0.0f, 7.0f));
-        y.add(new Entry(1.0f, -2.0f));
-        LineDataSet xdata = new LineDataSet(x, "x");
-        xdata.setAxisDependency(YAxis.AxisDependency.LEFT);
-        LineDataSet ydata = new LineDataSet(y, "y");
-        ydata.setAxisDependency(YAxis.AxisDependency.LEFT);
-        xdata.setColor(Color.RED);
-        ydata.setColor(Color.GREEN);
-
-        //xdata.setValueTextColor(Color.BLUE);
-        //ydata.setValueTextColor(Color.BLUE);
-        List<ILineDataSet> dataSets = new ArrayList<ILineDataSet>();
-        dataSets.add(xdata);
-        dataSets.add(ydata);
-        LineData lineData = new LineData(dataSets);
-        chart.setData(lineData);
-        chart.invalidate();
-
+        // initializing datasets
+        initDatasets();
 
         //initiate and fill example array with random values
         rndAccExamplevalues = new double[64];
         randomFill(rndAccExamplevalues);
         new FFTAsynctask(64).execute(rndAccExamplevalues);
+    }
+
+    public void initDatasets(){
+        List<Entry> xList = new ArrayList<Entry>();
+        List<Entry> yList = new ArrayList<Entry>();
+        List<Entry> zList = new ArrayList<>();
+        List<Entry> mList = new ArrayList<>();
+
+        xSet = new LineDataSet(xList, "x");
+        ySet = new LineDataSet(yList, "y");
+        zSet = new LineDataSet(zList, "z");
+        mSet = new LineDataSet(mList, "magnitude");
+
+        xSet.setAxisDependency(YAxis.AxisDependency.LEFT);
+        ySet.setAxisDependency(YAxis.AxisDependency.LEFT);
+        zSet.setAxisDependency(YAxis.AxisDependency.LEFT);
+        mSet.setAxisDependency(YAxis.AxisDependency.LEFT);
+
+        xSet.setColor(Color.RED);
+        ySet.setColor(Color.GREEN);
+        zSet.setColor(Color.BLUE);
+        mSet.setColor(Color.WHITE);
+
+        List<ILineDataSet> dataSets = new ArrayList<ILineDataSet>();
+        dataSets.add(xSet);
+        dataSets.add(ySet);
+        dataSets.add(zSet);
+        dataSets.add(mSet);
+
+        lineData = new LineData(dataSets);
+        chart.setData(lineData);
     }
 
     @Override
@@ -129,6 +141,29 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         yView.setText("y: " + xyz[1]);
         zView.setText("z: " + xyz[2]);
         magnitudeView.setText("magnitude: " + magnitude);
+
+        // add data to the chart
+        if(labelCount == 15.0f) {
+            // refresh the view
+            labelCount = 0.0f;
+            xSet.clear();
+            ySet.clear();
+            zSet.clear();
+            mSet.clear();
+            chart.invalidate();
+            chart.moveViewToX(0.0f);
+        } else {
+            labelCount += 1.0f;
+        }
+        xSet.addEntry(new Entry(labelCount, xyz[0]));
+        ySet.addEntry(new Entry(labelCount, xyz[1]));
+        zSet.addEntry(new Entry(labelCount, xyz[2]));
+        mSet.addEntry(new Entry(labelCount, magnitude));
+
+        // refresh the chart
+        lineData.notifyDataChanged();
+        chart.notifyDataSetChanged();
+        chart.invalidate();
     }
 
     /**
