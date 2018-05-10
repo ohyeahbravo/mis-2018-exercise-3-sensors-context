@@ -7,10 +7,12 @@
     tools:context=".MainActivity">
 
     <TextView
-        android:id="@+id/title1"
+        android:id="@+id/title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_above="@+id/chart"
         android:layout_centerHorizontal="true"
+        android:layout_marginBottom="-38dp"
         android:text="Accelerometer Data"
         android:textColor="#000000"
         android:textStyle="bold" />
@@ -19,6 +21,28 @@
         android:id="@+id/chart"
         android:layout_width="match_parent"
         android:layout_height="250dp"
-        android:layout_below="@+id/title1" />
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="38dp" />
+
+    <TextView
+        android:id="@+id/fft"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/fftdata"
+        android:layout_centerHorizontal="true"
+        android:text="FFT Data"
+        android:textColor="#000000"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/fftdata"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="179dp"
+        android:text="FFT Data put here"
+        android:textColor="#000000" />
 
 </RelativeLayout>

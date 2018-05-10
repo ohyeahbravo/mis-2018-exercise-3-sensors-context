@@ -35,10 +35,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     LineData lineData;
     LineDataSet xSet, ySet, zSet, mSet;
     float labelCount = -1.0f;    // refresh the graph after 15 datasets;
+    TextView fftView;
+    double fftValue = 0.0;
 
-    //example variables
-    private double[] rndAccExamplevalues;
+    // fft variables
+    private double[] magnitudes;
     private double[] freqCounts;
+    int fftCount = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,11 +52,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         if (sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION) != null) {
             // accelerometer available
             accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
-            sensorManager.registerListener(MainActivity.this, accelerometer, 1000000);
+            sensorManager.registerListener(MainActivity.this, accelerometer, 50000);
         } else {
             // accelerometer not available
             Toast.makeText(getApplicationContext(), "No Accelerometer", Toast.LENGTH_SHORT).show();
         }
+
+        // view for fft data
+        fftView = (TextView) findViewById(R.id.fftdata);
 
         // adding chart
         chart = (LineChart) findViewById(R.id.chart);
@@ -75,39 +81,54 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // initializing datasets
         initDatasets();
 
-        //initiate and fill example array with random values
-        rndAccExamplevalues = new double[64];
-        randomFill(rndAccExamplevalues);
-        new FFTAsynctask(64).execute(rndAccExamplevalues);
+        //initiate magnitudes array
+        magnitudes = new double[64];
     }
 
+    // initialize the chart
     public void initDatasets(){
+        // lists of data
         List<Entry> xList = new ArrayList<Entry>();
         List<Entry> yList = new ArrayList<Entry>();
         List<Entry> zList = new ArrayList<>();
         List<Entry> mList = new ArrayList<>();
 
+        // sets of data
         xSet = new LineDataSet(xList, "x");
         ySet = new LineDataSet(yList, "y");
         zSet = new LineDataSet(zList, "z");
         mSet = new LineDataSet(mList, "magnitude");
 
+        // data shown from the left y axis
         xSet.setAxisDependency(YAxis.AxisDependency.LEFT);
         ySet.setAxisDependency(YAxis.AxisDependency.LEFT);
         zSet.setAxisDependency(YAxis.AxisDependency.LEFT);
         mSet.setAxisDependency(YAxis.AxisDependency.LEFT);
 
+        // line colors
         xSet.setColor(Color.RED);
         ySet.setColor(Color.GREEN);
         zSet.setColor(Color.BLUE);
         mSet.setColor(Color.WHITE);
 
+        // add a dataset to datasets
         List<ILineDataSet> dataSets = new ArrayList<ILineDataSet>();
         dataSets.add(xSet);
         dataSets.add(ySet);
         dataSets.add(zSet);
         dataSets.add(mSet);
 
+        // styling the chart
+        xSet.setCircleRadius(2.0f);
+        xSet.setDrawCircleHole(false);
+        ySet.setCircleRadius(2.0f);
+        ySet.setDrawCircleHole(false);
+        zSet.setCircleRadius(2.0f);
+        zSet.setDrawCircleHole(false);
+        mSet.setCircleRadius(2.0f);
+        mSet.setDrawCircleHole(false);
+
+        // set the chart's data
         lineData = new LineData(dataSets);
         lineData.setDrawValues(false);
         chart.setData(lineData);
@@ -117,6 +138,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public void onAccuracyChanged(Sensor sensor, int i){
 
     }
+
     @Override
     public void onSensorChanged(SensorEvent sensorEvent){
 
@@ -150,10 +172,19 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         zSet.addEntry(new Entry(labelCount, xyz[2]));
         mSet.addEntry(new Entry(labelCount, magnitude));
 
-        // refresh the chart
+        // update the view
         lineData.notifyDataChanged();
         chart.notifyDataSetChanged();
         chart.invalidate();
+
+        // update fft data
+
+        magnitudes[++fftCount] = (double) magnitude;
+
+        if(fftCount == 63) {
+            new FFTAsynctask(64).execute(magnitudes);
+            fftCount = -1;
+        }
     }
 
     /**
@@ -201,11 +232,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         protected void onPostExecute(double[] values) {
             //hand over values to global variable after background task is finished
             freqCounts = values;
+            fftView.setText("value: " + freqCounts[0] + " / " + freqCounts[1] + " / " + freqCounts[2]);
         }
     }
-
-
-
 
     /**
      * little helper function to fill example with random double values
