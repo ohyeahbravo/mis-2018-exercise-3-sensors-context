@@ -6,6 +6,10 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.media.MediaPlayer;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
@@ -29,7 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class MainActivity extends AppCompatActivity implements SensorEventListener{
+public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
     TextView testView;
 
@@ -50,6 +54,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     int samplerate = 50000;
     int winsize = 64;
     boolean winsizeChanged = false;
+
+    // location manager
+    LocationManager locationManager;
+    LocationListener locationListener;
+    float speed = 0.0f;
+
+    // music player
+    MediaPlayer joggingPlayer;
+    MediaPlayer bikingPlayer;
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
@@ -155,6 +168,40 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 magnitudes = new double[winsize];
             }
         });
+
+        // Initializing Location Manager
+        // reference: https://developer.android.com/guide/topics/location/strategies
+        locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+        locationListener = new LocationListener() {
+            @Override
+            public void onLocationChanged(Location location) {
+                speed = (float) location.getSpeed();
+                testView.setText("speed: " + speed);
+            }
+
+            @Override
+            public void onStatusChanged(String provider, int status, Bundle extras) {
+
+            }
+
+            @Override
+            public void onProviderEnabled(String provider) {
+
+            }
+
+            @Override
+            public void onProviderDisabled(String provider) {
+
+            }
+        };
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        stopMusic();
+        bikingPlayer.release();
+        joggingPlayer.release();
     }
 
     // initialize the chart
@@ -312,10 +359,19 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         // refresh the view
         fSet.clear();
+        double max = 0;
 
         // add entries
         for(int i = 0; i < winsize; i++) {
+            if(freqCounts[i] > max)
+                max = freqCounts[i];
             fSet.addEntry(new Entry(i, (float) freqCounts[i]));
+        }
+
+        if(max > 300) {
+            playMusic(max);
+        } else {
+            stopMusic();
         }
 
         // update the view
@@ -337,6 +393,49 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
     }
 
+    // reference: https://developer.android.com/guide/topics/media/mediaplayer
+    public void playMusic(double max) {
 
+        // when the device is not moving too vigorously, we assume the user is biking.
+        if(max < 800) {
+            if(bikingPlayer == null)
+                bikingPlayer = MediaPlayer.create(getApplicationContext(), R.raw.biking);
 
+            if(!bikingPlayer.isPlaying())
+                bikingPlayer = MediaPlayer.create(getApplicationContext(), R.raw.biking);
+
+            if(joggingPlayer != null && joggingPlayer.isPlaying()) {
+                joggingPlayer.stop();
+            }
+
+            if(!bikingPlayer.isPlaying())
+                bikingPlayer.start();
+        }
+
+        // when the device is moving vigorously, we assume the user is jogging.
+        else{
+            if(joggingPlayer == null)
+                joggingPlayer = MediaPlayer.create(getApplicationContext(), R.raw.jogging);
+
+            if(!joggingPlayer.isPlaying())
+                joggingPlayer = MediaPlayer.create(getApplicationContext(), R.raw.jogging);
+
+            if(bikingPlayer != null && bikingPlayer.isPlaying()) {
+                bikingPlayer.stop();
+            }
+
+            if(!joggingPlayer.isPlaying())
+                joggingPlayer.start();
+        }
+    }
+
+    // reference: https://developer.android.com/guide/topics/media/mediaplayer
+    public void stopMusic() {
+        if(bikingPlayer!=null && bikingPlayer.isPlaying()){
+            bikingPlayer.stop();
+        }
+        if(joggingPlayer!=null && joggingPlayer.isPlaying()){
+            joggingPlayer.stop();
+        }
+    }
 }

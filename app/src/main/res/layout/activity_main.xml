@@ -76,7 +76,7 @@
         android:layout_height="wrap_content"
         android:layout_below="@+id/wsizebar"
         android:layout_centerHorizontal="true"
-        android:text="test value"
+        android:text=""
         android:textColor="#000000" />
 
 </RelativeLayout>
