@@ -31,12 +31,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private SensorManager sensorManager;
     Sensor accelerometer;
 
-    LineChart chart;
-    LineData lineData;
-    LineDataSet xSet, ySet, zSet, mSet;
+    LineChart chart, fftChart;
+    LineData lineData, fftData;
+    LineDataSet xSet, ySet, zSet, mSet, fSet;
     float labelCount = -1.0f;    // refresh the graph after 15 datasets;
-    TextView fftView;
-    double fftValue = 0.0;
 
     // fft variables
     private double[] magnitudes;
@@ -58,10 +56,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             Toast.makeText(getApplicationContext(), "No Accelerometer", Toast.LENGTH_SHORT).show();
         }
 
-        // view for fft data
-        fftView = (TextView) findViewById(R.id.fftdata);
-
-        // adding chart
+        // adding the first chart
         chart = (LineChart) findViewById(R.id.chart);
         chart.setBackgroundColor(Color.LTGRAY);
         XAxis xAxis = chart.getXAxis();
@@ -80,6 +75,31 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         // initializing datasets
         initDatasets();
+
+        // adding the fft chart
+        fftChart = (LineChart) findViewById(R.id.fftchart);
+        fftChart.setBackgroundColor(Color.LTGRAY);
+        XAxis xAxisfft = fftChart.getXAxis();
+        xAxisfft.setDrawGridLines(false);
+        xAxisfft.setDrawAxisLine(false);
+        xAxisfft.setDrawLabels(false);
+        YAxis leftfft = fftChart.getAxisLeft();
+        leftfft.setDrawLabels(false);
+        leftfft.setDrawAxisLine(false);
+        leftfft.setDrawGridLines(false);
+        leftfft.setDrawZeroLine(true);
+        YAxis rightfft = fftChart.getAxisRight();
+        rightfft.setEnabled(false);
+        fftChart.getDescription().setText("");
+        fSet = new LineDataSet(new ArrayList<Entry>(), "fft");
+        fSet.setAxisDependency(YAxis.AxisDependency.LEFT);
+        List<ILineDataSet> fftSets = new ArrayList<ILineDataSet>();
+        fftSets.add(fSet);
+        fftData = new LineData(fftSets);
+        fftData.setDrawValues(false);
+        fSet.setCircleRadius(1.5f);
+        fSet.setDrawCircleHole(false);
+        fSet.setColor(Color.MAGENTA);
 
         //initiate magnitudes array
         magnitudes = new double[64];
@@ -178,9 +198,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         chart.invalidate();
 
         // update fft data
-
         magnitudes[++fftCount] = (double) magnitude;
-
         if(fftCount == 63) {
             new FFTAsynctask(64).execute(magnitudes);
             fftCount = -1;
@@ -232,8 +250,27 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         protected void onPostExecute(double[] values) {
             //hand over values to global variable after background task is finished
             freqCounts = values;
-            fftView.setText("value: " + freqCounts[0] + " / " + freqCounts[1] + " / " + freqCounts[2]);
+            drawFFTchart(); // visualize the data
         }
+    }
+
+    // visualize FFT values with a line chart
+    public void drawFFTchart() {
+
+        // refresh the view
+        fSet.clear();
+
+        // add entries
+        for(int i = 0; i < 64; i++) {
+            fSet.addEntry(new Entry(i, (float) freqCounts[i]));
+        }
+
+        // update the view
+        fftData.notifyDataChanged();
+        fftChart.setData(fftData);
+        fftChart.notifyDataSetChanged();
+        fftChart.invalidate();
+
     }
 
     /**
