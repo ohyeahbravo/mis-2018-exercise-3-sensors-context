@@ -7,9 +7,12 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.AsyncTask;
+import android.os.Build;
+import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -28,6 +31,8 @@ import java.util.Random;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener{
 
+    TextView testView;
+
     private SensorManager sensorManager;
     Sensor accelerometer;
 
@@ -41,16 +46,24 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private double[] freqCounts;
     int fftCount = -1;
 
+    // seekbar variables
+    int samplerate = 50000;
+    int winsize = 64;
+    boolean winsizeChanged = false;
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        testView = (TextView) findViewById(R.id.test);
+
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         if (sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION) != null) {
             // accelerometer available
             accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
-            sensorManager.registerListener(MainActivity.this, accelerometer, 50000);
+            sensorManager.registerListener(MainActivity.this, accelerometer, samplerate);
         } else {
             // accelerometer not available
             Toast.makeText(getApplicationContext(), "No Accelerometer", Toast.LENGTH_SHORT).show();
@@ -101,8 +114,47 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         fSet.setDrawCircleHole(false);
         fSet.setColor(Color.MAGENTA);
 
-        //initiate magnitudes array
-        magnitudes = new double[64];
+        // initiate magnitudes array
+        magnitudes = new double[winsize];
+
+        // initialize seekbars
+        SeekBar rateBar = (SeekBar) findViewById(R.id.ratebar);
+        rateBar.setMax(2000000 - 1000); // value ranges from 1000 to 2000000
+        rateBar.setProgress(samplerate);    // default value
+        rateBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+            @Override
+            public void onProgressChanged(SeekBar seekbar, int progress, boolean fromUser) {
+                samplerate = progress + 1000;
+                sensorManager.unregisterListener(MainActivity.this);
+                sensorManager.registerListener(MainActivity.this, accelerometer, samplerate);
+            }
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+            @Override
+            public void onStopTrackingTouch (SeekBar seekBar) {
+            }
+        });
+
+        SeekBar wsizeBar = (SeekBar) findViewById(R.id.wsizebar);
+        wsizeBar.setMax(6-2);   // exponent value ranges from 2 to 6
+        wsizeBar.setProgress(2);
+        wsizeBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){
+            int changedValue;
+            @Override
+            public void onProgressChanged(SeekBar seekbar, int progress, boolean fromUser) {
+                changedValue = progress;
+            }
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+            @Override
+            public void onStopTrackingTouch (SeekBar seekBar) {
+                winsize = (int) Math.pow(2, changedValue + 4);
+                fftCount = -1;
+                magnitudes = new double[winsize];
+            }
+        });
     }
 
     // initialize the chart
@@ -199,10 +251,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         // update fft data
         magnitudes[++fftCount] = (double) magnitude;
-        if(fftCount == 63) {
-            new FFTAsynctask(64).execute(magnitudes);
+        if(fftCount == winsize-1) {
+            new FFTAsynctask(winsize).execute(magnitudes);
             fftCount = -1;
         }
+
     }
 
     /**
@@ -261,13 +314,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         fSet.clear();
 
         // add entries
-        for(int i = 0; i < 64; i++) {
+        for(int i = 0; i < winsize; i++) {
             fSet.addEntry(new Entry(i, (float) freqCounts[i]));
         }
 
         // update the view
         fftData.notifyDataChanged();
         fftChart.setData(fftData);
+        fftChart.setVisibleXRangeMaximum(winsize-1);
         fftChart.notifyDataSetChanged();
         fftChart.invalidate();
 

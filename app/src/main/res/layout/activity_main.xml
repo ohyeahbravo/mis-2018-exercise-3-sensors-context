@@ -10,9 +10,8 @@
         android:id="@+id/title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_above="@+id/chart"
+        android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginBottom="-38dp"
         android:text="Accelerometer Data"
         android:textColor="#000000"
         android:textStyle="bold" />
@@ -22,14 +21,29 @@
         android:layout_width="match_parent"
         android:layout_height="200dp"
         android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:layout_marginTop="38dp" />
+        android:layout_below="@+id/title" />
+
+    <TextView
+        android:id="@+id/ratebartitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/chart"
+        android:layout_centerHorizontal="true"
+        android:text="Adjust Sample Rate"
+        android:textColor="#000000" />
+
+    <SeekBar
+        android:id="@+id/ratebar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/ratebartitle"
+        android:progress="100"/>
 
     <TextView
         android:id="@+id/fft"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/chart"
+        android:layout_below="@+id/ratebar"
         android:layout_centerHorizontal="true"
         android:text="FFT Data"
         android:textColor="#000000"
@@ -41,5 +55,28 @@
         android:layout_height="200dp"
         android:layout_alignParentStart="true"
         android:layout_below="@+id/fft" />
+
+    <TextView
+        android:id="@+id/wsizebartitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/fftchart"
+        android:layout_centerHorizontal="true"
+        android:text="Adjust FFT window size"
+        android:textColor="#000000" />
+    <SeekBar
+        android:id="@+id/wsizebar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/wsizebartitle" />
+
+    <TextView
+        android:id="@+id/test"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/wsizebar"
+        android:layout_centerHorizontal="true"
+        android:text="test value"
+        android:textColor="#000000" />
 
 </RelativeLayout>
